@@ -44,7 +44,7 @@ jobs:
           ALL_CHANGED_FILES_COUNT: ${{ steps.changed-files.outputs.all_changed_files_count }}
         run: |
           sorted_files=$(for file in ${ALL_CHANGED_FILES}; do
-            echo "$(git log -1 --date=iso-strict-local -- $file); $file"$'\n';
+            echo "$(git log -1 --date=iso-strict-local --format="%ai" -- $file); $file"$'\n';
           done | sort | cut -d ';' -f 2)
           snow git fetch "${REPO}"
           echo "Deploying ${ALL_CHANGED_FILES_COUNT} file(s) to ${ENV}"
