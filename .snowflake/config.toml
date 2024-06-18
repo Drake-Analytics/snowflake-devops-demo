@@ -1,0 +1,4 @@
+[connections.default]
+account = "lh99228.eu-north-1.aws" 
+warehouse = "COMPUTE_WH"
+role = "DEVOPSDEMO"

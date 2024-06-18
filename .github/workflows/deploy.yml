@@ -1,0 +1,57 @@
+name: Deploy changed files
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest  
+    name: Deploy
+
+    env:
+      USER: ${{ secrets.SNOWFLAKE_USER }}
+      PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+      REPO: DEVOPSDEMO_COMMON.PUBLIC.DEVOPSDEMO
+      BRANCH: ${{ github.ref_name }}
+      ENV: ${{ (github.ref_name == 'main' && 'PROD') || 'DEV' }}
+      COMMIT_SHA: ${{ github.sha }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Snowflake CLI
+        uses: Snowflake-Labs/snowflake-cli-action@v1
+        with:
+          cli-version: "latest"
+          default-config-file-path: ".snowflake/config.toml"
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          files: |
+            DB_Objects/*.sql
+
+      - name: Deploy changed files
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+          ALL_CHANGED_FILES_COUNT: ${{ steps.changed-files.outputs.all_changed_files_count }}
+        run: |
+          sorted_files=$(for file in ${ALL_CHANGED_FILES}; do
+            echo "$(git log -1 --date=iso-strict-local -- $file); $file"$'\n';
+          done | sort | cut -d ';' -f 2)
+          snow git fetch "${REPO}"
+          echo "Deploying ${ALL_CHANGED_FILES_COUNT} file(s) to ${ENV}"
+          for file in ${sorted_files}; do
+            echo $file
+            file_sha=$(git ls-files -s "$file" | cut -d ' ' -f 2)
+            deployment_info="{\"deployment_info\": {\"file\": \"${REPO}/branches/${BRANCH}/$file\", \"commit_sha1\": \"${COMMIT_SHA}\", \"file_sha1\": \"${file_sha}\"}}"
+            query="EXECUTE IMMEDIATE FROM @${REPO}/branches/${BRANCH}/$file USING (deployment_info => '${deployment_info}');"
+            echo ${query} | snow sql --stdin --database "DEVOPSDEMO_${ENV}"
+          done
+
