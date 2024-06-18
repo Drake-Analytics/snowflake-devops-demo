@@ -12,8 +12,9 @@ jobs:
     name: Deploy
 
     env:
-      USER: ${{ secrets.SNOWFLAKE_USER }}
-      PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+      SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+      SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
       REPO: DEVOPSDEMO_COMMON.PUBLIC.DEVOPSDEMO
       BRANCH: ${{ github.ref_name }}
       ENV: ${{ (github.ref_name == 'main' && 'PROD') || 'DEV' }}
