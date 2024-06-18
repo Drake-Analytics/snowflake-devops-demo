@@ -7,3 +7,4 @@ CREATE OR ALTER TABLE sales.sales (
 )
 COMMENT='{{deployment_info}}'
 ;
+
